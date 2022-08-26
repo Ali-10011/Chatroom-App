@@ -1,9 +1,21 @@
 <html>
     <head>
-        <titl>ChatApp | Home</titl>
+        <title>ChatApp | Home</title>
     </head>
 
     <body>
         <h1>Welcome, <%=username%></h1>
     </body>
+    <script src="/socket.io/socket.io.js"></script>
+		<script>
+             
+			var SessionUserName = '<%- username %>'; //when you want to use EJS variables in clientside script, you use it like this
+            var Room = prompt("Room");
+			var socket = io();
+            socket.emit("join room", {username: SessionUserName, roomname: Room}); //sending data to server side
+            socket.on("send data", (data)=>{
+                console.log(data);
+            }); //receiving data from serverside
+			
+		</script>
 </html>
