@@ -1,21 +1,160 @@
 <html>
     <head>
         <title>ChatApp | Home</title>
+        <link
+        href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap"
+        rel="stylesheet"
+      />
+      <style>
+        form {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+        }
+        form input {
+          width: 90%;
+        }
+        #submitButton {
+          width: 9%;
+        }
+        .time {
+          color: red;
+          font-family: "Ubuntu";
+          text-align: right;
+        }
+    
+        .message {
+          display: inline;
+        }
+        #messages {
+            list-style-type: none;
+        }
+        .me {
+          font-family: sans-serif, "Courier New", Courier, monospace;
+          text-align: right;
+        }
+        .you {
+          font-family: sans-serif, "Courier New", Courier, monospace;
+          text-align: left;
+         
+        }
+        .yourDiv {
+          position: relative;
+          right: 10;
+          width: 50%;
+          background-color: blue;
+          border-radius: 20;
+          color: white;
+        }
+        .myDiv {
+          position: relative;
+          left: 40%;
+          width: 50%;
+          border-radius: 20;
+          background-color: violet;
+        }
+        .notifymessage
+        {
+            position: relative;
+            left: 35%;
+            right: 35%;
+            width: 20%;
+            text-align: center;
+            background-color: green;
+        }
+      </style>
     </head>
 
     <body>
         <h1>Welcome, <%=username%></h1>
+        <ul id="messages"></ul>
+            <form>
+              <input type="text" id="messageInput" />
+              <input type="submit" id="submitButton" value="submit" />
+            </form>
     </body>
     <script src="/socket.io/socket.io.js"></script>
-		<script>
-             
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.js"
+      integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script> 
+		<script>         
 			var SessionUserName = '<%- username %>'; //when you want to use EJS variables in clientside script, you use it like this
             var Room = prompt("Room");
 			var socket = io();
-            socket.emit("join room", {username: SessionUserName, roomname: Room}); //sending data to server side
-            socket.on("send data", (data)=>{
-                console.log(data);
+            var socketID;
+           
+            socket.emit("join room", {username: SessionUserName, roomname: Room}); //sending data to server side //alerts that some user is trying to join a room to the server
+            socket.on("user connect", (data)=>{
+                socketID = data.socketID;
+                console.log(SessionUserName + 'has joined Room: ' + Room); //The request is successful, and it alerts in the chat room to all users that someone new has joined
+            
             }); //receiving data from serverside
-			
+
+
+
+            //html css part
+            $("#messageInput").focus();
+    //when form is submitted, capture the input value and then send it to server
+    document
+      .getElementsByTagName("form")[0] //This is it wasn't appearing
+      .addEventListener("submit", function (event) {
+        event.preventDefault(); //prevents default actions of a form
+        socket.emit("chat message", { //sending the message event along with its data entered in frontend back to the backend
+          value: document.getElementById("messageInput").value,
+          user: SessionUserName,      
+        });
+
+        document.getElementById("messageInput").value = ""; //Empty the input bar after message has been taken in
+      });
+
+
+    socket.on("chat message", (data) => { //The data we received after backend parsed our request.
+      console.log(data.user + ": " + data.id);
+        displayMessage(data);
+    });
+
+    function displayMessage(data) {
+        let authorClass = "";
+      let divClass = ""
+      console.log('Inside the fucntion');
+      console.log(data);
+      //verify that the user ID and the message sent ID is similar 
+      if (data.id == socketID) {
+          console.log("This person has sent a message")
+        authorClass = "me";
+        divClass = "myDiv";
+      } 
+      else {
+        authorClass = "you";
+        divClass = "yourDiv";
+      }
+
+
+      //composing  message
+      const div = document.createElement("div");
+      div.className = divClass; //separating the message format based on who has logged in
+      const li = document.createElement("li");
+      const p = document.createElement("p");
+      p.className = "time";
+      p.innerText = moment().format("hh:mm");
+      div.innerHTML =
+        '<p class="' +
+        authorClass +
+        '">' +
+        data.data.user +
+        "</p>" +
+        '<p class="message"> ' +
+        data.data.value +
+        "</p>";
+      div.appendChild(p);
+      li.appendChild(div);
+
+      document.getElementById("messages").appendChild(li);
+      //scroll to the bottom
+      window.scrollTo(0, document.body.scrollHeight);
+    }
 		</script>
 </html>

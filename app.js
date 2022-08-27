@@ -7,27 +7,47 @@ const ChatData = require('./models/ChatData');
 var SessionUser;
 var errmsg;
 const app = express();
+var UsersRoom;
 var http = require('http').createServer(app);
 var io = require("socket.io")(http);
 const {joinUser, removeUser} = require('./models/UsersData');
 app.set('view engine', 'ejs'); //ejs looks for view files in a "view" folder, so you have to have one made
 app.use(express.urlencoded({ extended: true })); //some sort of encoding, to make sure data doesn't get crappy
-
 const uri = 'mongodb+srv://Art:Art0309@node-practice.jknzmex.mongodb.net/Chat-App'; //name of the database we want to access, otherwise it will assign it to a database named "test"
+
+
+
+
 mongoose.connect(uri,{ useNewUrlParser: true, useUnifiedTopology: true })
 .then((data)=>{ 
 io.on("connection", function (socket){
   console.log("socket connected");
   socket.on("join room", (data)=>{
    let UserInstance = joinUser(socket.id, data.username, data.roomname);
-   socket.emit('send data', UserInstance);
-  
-  }) } ); 
+   UsersRoom = data.roomname;
+   socket.emit('user connect', UserInstance);
+   socket.join(UsersRoom); //The instance of socket connects to this room
+  } 
+  );
+
+  socket.on("chat message", (data) => { //from this point forward all of the request of socket will only entertain this specific room
+    io.to(UsersRoom).emit("chat message", {data:data, id : socket.id}); //sending an event to the room number that someone has sent a message to the frontend
+  });
+
+  socket.on("disconnect", () => {
+    const user = removeUser(socket.id);
+    console.log(user);
+    if(user) {
+      console.log(user.username + ' has left' + 'the Room: ' + UsersRoom);
+    }
+    console.log("disconnected");
+  });
+ } ); 
   http.listen(3000);})
 .catch((err)=>{console.log(err)});
  //we only want to listen to request when the database has been connected
  //listen from port number 3000, it automatically knows it's localhost
-app.get('/', (req, res) => {
+  app.get('/', (req, res) => {
     res.redirect('/login');
   });
   //on one page, you can either one of each type request
