@@ -25,10 +25,16 @@ io.on("connection", function (socket){
   socket.on("join room", (data)=>{
    let UserInstance = joinUser(socket.id, data.username, data.roomname);
    UsersRoom = data.roomname;
-   socket.emit('user connect', UserInstance);
+   socket.emit('send data', UserInstance);
    socket.join(UsersRoom); //The instance of socket connects to this room
   } 
   );
+
+
+  socket.on("user join", (data)=>
+  {
+  io.to(UsersRoom).emit("new user", {username: data.username}); //This message is broadcasted to all instances of the  room
+  });
 
   socket.on("chat message", (data) => { //from this point forward all of the request of socket will only entertain this specific room
     io.to(UsersRoom).emit("chat message", {data:data, id : socket.id}); //sending an event to the room number that someone has sent a message to the frontend
@@ -36,11 +42,10 @@ io.on("connection", function (socket){
 
   socket.on("disconnect", () => {
     const user = removeUser(socket.id);
-    console.log(user);
-    if(user) {
-      console.log(user.username + ' has left' + 'the Room: ' + UsersRoom);
+    const name = user['username'];
+    if(user) { //if that user even existed in the users list
+      io.to(UsersRoom).emit("user disconnect", {username: name});
     }
-    console.log("disconnected");
   });
  } ); 
   http.listen(3000);})
@@ -116,5 +121,10 @@ else
   
   app.get('/Home', (req, res) => {
    
-    res.render('Home', { username: SessionUser }); //it will render login.ejs file
+    res.render('Home', { username: SessionUser, title: 'Home' }); //it will render login.ejs file
   }); 
+
+  app.use((request, response)=>{ //it will work in my any case,kind of like a default case
+    response.status(404).render('404', {title: '404'}); //if the status is 404, then it will render the page.
+ })
+ 

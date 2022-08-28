@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>ChatApp | Home</title>
+      <%- include('./partials/Header.ejs'); %>
         <link
         href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap"
         rel="stylesheet"
@@ -18,40 +18,52 @@
           width: 9%;
         }
         .time {
-          color: red;
+          color: white;
           font-family: "Ubuntu";
           text-align: right;
+          margin: 5px;
         }
     
         .message {
           display: inline;
+          margin: 5px;
         }
         #messages {
             list-style-type: none;
+            margin: 5px;
         }
         .me {
           font-family: sans-serif, "Courier New", Courier, monospace;
-          text-align: right;
+          text-align: left;
+          color: white;
+          margin: 5px;
         }
         .you {
+          
           font-family: sans-serif, "Courier New", Courier, monospace;
           text-align: left;
+          color: white;
+          margin: 5px;
          
         }
         .yourDiv {
           position: relative;
-          right: 10;
-          width: 50%;
-          background-color: blue;
-          border-radius: 20;
+          text-align: left;
+          left: 10%;
+          width: 30%;
+          background-color: black;
+          border-radius: 10px;
+     
           color: white;
         }
         .myDiv {
           position: relative;
-          left: 40%;
-          width: 50%;
-          border-radius: 20;
-          background-color: violet;
+          text-align: left;
+          left: 50%;
+          width: 30%;     
+          background-color: #128c7e;
+          border-radius: 10px;
+          color:white;
         }
         .notifymessage
         {
@@ -60,13 +72,23 @@
             right: 35%;
             width: 20%;
             text-align: center;
-            background-color: green;
+            background-color:#25D366;
+            border-radius: 10px;
+            margin: 5px;
+        }
+        h1
+        {
+            position: relative;
+            text-align: center;
+            width: 50%;
+            background-color: #CF9FFF;
+            border-radius: 10px;
+            margin: 10px;
         }
       </style>
     </head>
-
     <body>
-        <h1>Welcome, <%=username%></h1>
+        <h1>Welcome to the Room, <%=username%> !</h1>
         <ul id="messages"></ul>
             <form>
               <input type="text" id="messageInput" />
@@ -82,21 +104,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script> 
 		<script>         
 			var SessionUserName = '<%- username %>'; //when you want to use EJS variables in clientside script, you use it like this
-            var Room = prompt("Room");
-			var socket = io();
-            var socketID;
-           
-            socket.emit("join room", {username: SessionUserName, roomname: Room}); //sending data to server side //alerts that some user is trying to join a room to the server
-            socket.on("user connect", (data)=>{
-                socketID = data.socketID;
-                console.log(SessionUserName + 'has joined Room: ' + Room); //The request is successful, and it alerts in the chat room to all users that someone new has joined
-            
-            }); //receiving data from serverside
-
-
-
-            //html css part
-            $("#messageInput").focus();
+      var Room = prompt("Room");
+      var socket = io();
+      var socketID;
+              //html css part
+              $("#messageInput").focus();
     //when form is submitted, capture the input value and then send it to server
     document
       .getElementsByTagName("form")[0] //This is it wasn't appearing
@@ -110,11 +122,53 @@
         document.getElementById("messageInput").value = ""; //Empty the input bar after message has been taken in
       });
 
+            socket.emit("join room", {username: SessionUserName, roomname: Room}); //sending data to server side //alerts that some user is trying to join a room to the server
 
-    socket.on("chat message", (data) => { //The data we received after backend parsed our request.
-      console.log(data.user + ": " + data.id);
-        displayMessage(data);
-    });
+            socket.on("send data", (data)=>{
+                socketID = data.socketID;
+                socket.emit("user join", {username: SessionUserName});
+                socket.on("new user", (data)=>{
+                     notifymessage(data.username, ' has joined the room');
+                });
+                //The request is successful, and it alerts in the chat room to all users that someone new has joined
+  
+            }); //receiving data from serverside
+
+            socket.on("chat message", (data) => { //The data we received after backend parsed our request.
+        
+              displayMessage(data);
+           });
+
+            socket.on("user disconnect", (data)=>
+            {
+             notifymessage(data.username, ' has left the room');
+            });
+
+
+
+
+
+function notifymessage(username, message)
+{
+  console.log(username + message);
+      const div = document.createElement("div");
+      div.className = 'notifymessage'; //separating the message format based on who has logged in
+      const li = document.createElement("li");
+      const p = document.createElement("p");
+      p.className = "time";
+      p.innerText = moment().format("hh:mm a");
+      div.innerHTML =
+        '<p class="message"> ' +
+        username +
+        message +
+        "</p>";
+      div.appendChild(p);
+      li.appendChild(div);
+
+      document.getElementById("messages").appendChild(li);
+      //scroll to the bottom
+      window.scrollTo(0, document.body.scrollHeight);
+}
 
     function displayMessage(data) {
         let authorClass = "";
@@ -139,7 +193,7 @@
       const li = document.createElement("li");
       const p = document.createElement("p");
       p.className = "time";
-      p.innerText = moment().format("hh:mm");
+      p.innerText = moment().format("hh:mm a");
       div.innerHTML =
         '<p class="' +
         authorClass +
