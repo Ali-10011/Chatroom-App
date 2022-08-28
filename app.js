@@ -14,7 +14,7 @@ const {joinUser, removeUser} = require('./models/UsersData');
 app.set('view engine', 'ejs'); //ejs looks for view files in a "view" folder, so you have to have one made
 app.use(express.urlencoded({ extended: true })); //some sort of encoding, to make sure data doesn't get crappy
 const uri = 'mongodb+srv://Art:Art0309@node-practice.jknzmex.mongodb.net/Chat-App'; //name of the database we want to access, otherwise it will assign it to a database named "test"
-
+//This connection string will not work, you can add your own string here.
 
 
 
